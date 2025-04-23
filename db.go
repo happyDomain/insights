@@ -8,8 +8,8 @@ import (
 	"net/url"
 	"time"
 
+	"git.happydns.org/happyDomain/model"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/navidrome/navidrome/core/metrics/insights"
 )
 
 func openDB(fileName string) (*sql.DB, error) {
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS insights (
 	return db, nil
 }
 
-func saveToDB(db *sql.DB, data insights.Data) error {
+func saveToDB(db *sql.DB, data happydns.Insights) error {
 	dataJSON, err := json.Marshal(data)
 	if err != nil {
 		return err

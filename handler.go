@@ -6,12 +6,12 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/navidrome/navidrome/core/metrics/insights"
+	"git.happydns.org/happyDomain/model"
 )
 
 func handler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var data insights.Data
+		var data happydns.Insights
 
 		err := decodeJSONBody(w, r, &data)
 		if err != nil {
