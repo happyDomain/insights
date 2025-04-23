@@ -3,26 +3,52 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
-	"net/url"
+	"os"
+	"strings"
 	"time"
 
 	"git.happydns.org/happyDomain/model"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/go-sql-driver/mysql"
 )
 
-func openDB(fileName string) (*sql.DB, error) {
-	params := url.Values{
-		"_journal_mode": []string{"WAL"},
-		"_synchronous":  []string{"NORMAL"},
-		"cache_size":    []string{"1000000000"},
-		"cache":         []string{"shared"},
-		"_busy_timeout": []string{"5000"},
-		"_txlock":       []string{"immediate"},
+// DSNGenerator returns DSN filed with values from environment
+func DSNGenerator() string {
+	db_user := "hd_insights"
+	db_password := "hd_insights"
+	db_host := ""
+	db_db := "hd_insights"
+
+	if v, exists := os.LookupEnv("MYSQL_HOST"); exists {
+		if strings.HasPrefix(v, "/") {
+			db_host = "unix(" + v + ")"
+		} else {
+			db_host = "tcp(" + v + ":"
+			if p, exists := os.LookupEnv("MYSQL_PORT"); exists {
+				db_host += p + ")"
+			} else {
+				db_host += "3306)"
+			}
+		}
 	}
-	dataSourceName := fmt.Sprintf("file:%s?%s", fileName, params.Encode())
-	db, err := sql.Open("sqlite3", dataSourceName)
+	if v, exists := os.LookupEnv("MYSQL_PASSWORD"); exists {
+		db_password = v
+	} else if v, exists := os.LookupEnv("MYSQL_ROOT_PASSWORD"); exists {
+		db_user = "root"
+		db_password = v
+	}
+	if v, exists := os.LookupEnv("MYSQL_USER"); exists {
+		db_user = v
+	}
+	if v, exists := os.LookupEnv("MYSQL_DATABASE"); exists {
+		db_db = v
+	}
+
+	return db_user + ":" + db_password + "@" + db_host + "/" + db_db + "?parseTime=true"
+}
+
+func openDB(dataSourceName string) (*sql.DB, error) {
+	db, err := sql.Open("mysql", dataSourceName)
 	if err != nil {
 		return nil, err
 	}
@@ -30,9 +56,9 @@ func openDB(fileName string) (*sql.DB, error) {
 	// Create table if not exists
 	createTableQuery := `
 CREATE TABLE IF NOT EXISTS insights (
-	id VARCHAR NOT NULL,
+	id VARCHAR(255) NOT NULL,
 	time DATETIME default CURRENT_TIMESTAMP,
-	data JSONB,
+	data JSON,
 	PRIMARY KEY (id, time)
 );`
 	_, err = db.Exec(createTableQuery)

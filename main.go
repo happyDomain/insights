@@ -21,7 +21,7 @@ func dataCleaner(db *sql.DB) {
 }
 
 func main() {
-	db, err := openDB("insights.db")
+	db, err := openDB(DSNGenerator())
 	if err != nil {
 		log.Fatal(err)
 	}
